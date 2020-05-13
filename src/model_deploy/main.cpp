@@ -1,5 +1,6 @@
+#include "DA7212.h"
 #include "accelerometer_handler.h"
-
+#include "mbed.h"
 #include "config.h"
 
 #include "magic_wand_model_data.h"
@@ -20,8 +21,58 @@
 #include "tensorflow/lite/version.h"
 
 
-// Return the result of the last prediction
 
+#include <cmath>
+
+
+#include "uLCD_4DGL.h"
+
+DA7212 audio;
+uLCD_4DGL uLCD(D1, D0, D2); // serial tx, serial rx, reset pin;
+
+
+int16_t waveform[kAudioTxBufferSize];
+int start=0;
+EventQueue queue(32 * EVENTS_EVENT_SIZE);
+InterruptIn button(SW2);
+Thread t;
+int pause=1;
+int mode=0;      ///0 play music     1  select     2   game
+int music=0;     ///0 mary   1 tiger    2  python
+int current_mode=0;
+int music_now=0;
+int si=494;
+int la=440;
+int sol=392;
+int dor=261;
+int re=293;
+int mi=330;
+int fa=349;
+int so=392;
+int Do=523;
+
+int Mary[25]={si,la,sol,la,si,si,si,la,la,la,si,si,si,si,la,sol,la,si,si,si,la,la,si,la,sol};
+int length_Mary[25]={1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2};
+int tiger[32]={dor,re,mi,dor,dor,re,mi,dor,mi,fa,so,mi,fa,so,so,la,so,fa,mi,dor,so,la,so,fa,mi,dor,mi,196,dor,mi,196,dor};
+int length_tiger[32]={1,1,1,1,1,1,1,1,1,1,2,1,1,2,1,1,1,1,1,1,1,1,1,1,1,1,1,1,2,1,1,2};
+// Return the result of the last prediction
+void playNote(int freq)
+
+{
+
+  for(int i = 0; i < kAudioTxBufferSize; i++)
+
+  {
+
+    waveform[i] = (int16_t) (sin((double)i * 2. * M_PI/(double) (kAudioSampleFrequency / freq)) * ((1<<16) - 1));
+
+  }
+
+  audio.spk.play(waveform, kAudioTxBufferSize);
+
+}
+
+/*****************************************music*/
 int PredictGesture(float* output) {
 
   // How many times the most recent gesture has been matched in a row
@@ -158,7 +209,7 @@ int main(int argc, char* argv[]) {
 
   // needed by this graph.
 
-  static tflite::MicroOpResolver<4> micro_op_resolver;
+  static tflite::MicroOpResolver<6> micro_op_resolver;
 
   micro_op_resolver.AddBuiltin(
 
@@ -181,9 +232,9 @@ int main(int argc, char* argv[]) {
   micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_SOFTMAX,
 
                                tflite::ops::micro::Register_SOFTMAX());
-micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_RESHAPE,
-                             tflite::ops::micro::Register_RESHAPE(), 1);
 
+  micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_RESHAPE,
+                             tflite::ops::micro::Register_RESHAPE(), 1);
   // Build an interpreter to run the model with
 
   static tflite::MicroInterpreter static_interpreter(
@@ -287,7 +338,101 @@ micro_op_resolver.AddBuiltin(tflite::BuiltinOperator_RESHAPE,
       error_reporter->Report(config.output_message[gesture_index]);
 
     }
+    uLCD.printf("\n %d \n",mode);
+    /********mode1*/
+   
 
+    while(gesture_index==0){
+      if(mode>=2)
+        mode=0;
+      else  
+        mode++;
+    }
+    if(button==0)
+      current_mode=mode;
+    /******************************mode0*/
+    if(current_mode==0){  
+      start=1;
+      int song[50];
+      int noteLength[50];
+      int num;
+      if(music_now==1){
+        for(int i=0;i<25;i++){
+          song[i]=Mary[i];
+          noteLength[i]=length_Mary[i];
+        }
+        num=25;
+      }
+      else
+      {
+        for(int i=0;i<32;i++){
+          song[i]=tiger[i];
+          noteLength[i]=length_tiger[i];
+        }    
+        num=32;    
+      }
+      
+      /*while(start==1){
+        t.start(callback(&queue, &EventQueue::dispatch_forever));
+
+
+        for(int i = 0; i < num; i++)
+
+        {
+
+          int length = noteLength[i];
+
+          while(length--)
+
+          {
+
+            queue.call(playNote, song[i]);
+
+            if(length <= 1) wait(1.0);
+
+          }
+
+        }
+
+
+
+
+      }*/
+
+      if(button==0&&start==1){
+        pause=1;      
+        start=0;
+        uLCD.printf("\n mode selection \n");
+      }
+    }
+  if(current_mode==0){ ///mode1
+    mode=0;
+    uLCD.printf("\n mode:music time \n");
   }
+  else if(current_mode==1){
+    mode=1;
+    uLCD.printf("\n mode:select music \n") ;     
+  }
+  else if(current_mode==2){ 
+    mode=2;
+    uLCD.printf("\n mode:Taiko game \n");
+  }
+  else{ 
+    mode=mode;
+    uLCD.printf("\n error! you suck. \n");
+  }    
+    /*******************************mode1***/
+    if(current_mode==1){
+      if(gesture_index==0){
+        if(music==0)
+          music=1;
+        else
+          music=0;
+      }
+      if(button==0)
+        music_now=music;
+    } 
+  }
+  
 
 }
