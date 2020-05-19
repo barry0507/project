@@ -5,7 +5,7 @@
 
 // The number of labels (without negative)
 
-#define label_num 1
+#define label_num 2
 
 
 struct Config {
@@ -18,7 +18,7 @@ struct Config {
 
   // The number of expected consecutive inferences for each gesture type.
 
-  const int consecutiveInferenceThresholds[label_num] = {5};
+  const int consecutiveInferenceThresholds[label_num] = {5,5};
 
 
   const char* output_message[label_num] = {
