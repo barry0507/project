@@ -264,33 +264,41 @@ void DNNgesture(){
         }
 
 }
+int co=0;
 int main() {
   DNNthread.start(&DNNgesture);
   while (1) {
     uLCD.cls();
-    DNN_count=5000; //BJ:run loop 50 times to get cursor_move 
+    DNN_count=50; //BJ:run loop 50 times to get cursor_move 
     cursor_move=-1;
     
     while (DNN_count--) {
       cursor_move = gesture_index;
-      
-      if(cursor_move == 1){
+    }  
+      if(cursor_move == 2){
+       
         if(mode == 2){
           mode = 0;
         }
         else{
         mode++;
         }    
+        co++;
+        break;
       }
-      else if(cursor_move == 0){
+      else if(cursor_move == 3){
+       
         if(mode <= 0){
           mode = 2;
         }
         else{
           mode--;
         }  
+        co++;
+        break;
       }
-    }
+      //wait(0.0001);
+    uLCD.printf("\n count %d \n",co); 
     uLCD.printf("\n DNN %d \n",cursor_move);  
     uLCD.printf("\n static mode %d \n",mode);
     /********mode1*/
@@ -328,23 +336,25 @@ int main() {
          uLCD.printf("\n mode selection \n");
          break;
         }
-
-        for(int i = 0; i < num; i++)
-        {
-          if(button1==0){
-            break;
-            start=0;
-          }
-          else{
-            int length = noteLength[i];
-            while(length--)
-            {
-              playNote(song[i]);
-              if(length <= 1) wait(1.0);
+        else{
+          for(int i = 0; i < num; i++)
+          {
+            if(button1==0){
+              break;
+              start=0;
             }
-          }
-        }
+            else{
+              int length = noteLength[i];
+              while(length--)
+              {
+                playNote(song[i]);
+                if(length <= 1) wait(1.0);
+              }
+            }
 
+          }
+          start=0;
+        }  
       }
 
     }
@@ -374,6 +384,7 @@ int main() {
       if(button2==0)
         music_now=music;
     } 
+    uLCD.printf("\n end \n");
   }
   
 
